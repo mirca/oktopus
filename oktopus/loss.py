@@ -137,3 +137,12 @@ class L1Norm(LossFunction):
     def evaluate(self, params):
         return self._evaluate(*params)
 
+
+class KLqp(LossFunction):
+
+    def __init__(self, data, model):
+        self.data = data
+        self.model = model
+
+    def evaluate(self, params):
+        return np.nansum(self.model(*params) * (np.log(model(*params)) - np.log(data)))
