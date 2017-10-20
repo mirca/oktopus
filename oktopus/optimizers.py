@@ -27,14 +27,14 @@ class GradientDescent(object):
             loss_after = self.loss_function(x0)
 
             if abs(loss_after - loss_before) < ftol:
-                msg = ("Loss function has not changed by {} the since previous"
-                       "iteration".format(ftol))
+                msg = ("Loss function has not changed by {} since the previous"
+                       " iteration".format(ftol))
                 self.save_state(x0, loss_after, i+1, msg)
                 break
 
-            if abs(x_tmp - x0).all() < xtol:
-                msg = ("Optimal parameters have not changed by {} the since"
-                       "previous iteration.".format(xtol))
+            if abs(x_tmp - x0 < xtol).all():
+                msg = ("Optimal parameters have not changed by {} since"
+                       "the previous iteration.".format(xtol))
                 self.save_state(x0, loss_after, i+1, msg)
                 break
             i += 1
@@ -44,9 +44,9 @@ class GradientDescent(object):
                    "The algorithm might not have converged.".format(n))
             self.save_state(x0, loss_after, n, msg)
 
-    def save_state(x0, funval, n_iter, message):
+    def save_state(self, x0, funval, n_iter, message):
         self.x = x0
-        self.fun = loss
+        self.fun = funval
         self.niters = n_iter
         self.message = message
 
