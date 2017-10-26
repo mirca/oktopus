@@ -42,3 +42,11 @@ def test_posterior(toy_data):
     mean_hat = logP.fit(x0=np.median(toy_data))
     np.testing.assert_almost_equal(mean_hat.x, np.mean(toy_data), decimal=4)
     np.testing.assert_almost_equal(logP.gradient(mean_hat.x), 0, decimal=3)
+
+@pytest.mark.parametrize("toy_data",
+                         ([3 * np.random.normal(size=100) + 10],
+                          [2 * np.random.normal(size=100) + 5]))
+def test_fitting_polynomial_to_data(toy_data):
+
+    x = npa.linspace(0, 10, len(toy_data))
+    line = lambda m, b: return x * m + b
