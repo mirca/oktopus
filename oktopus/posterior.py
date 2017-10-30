@@ -31,7 +31,7 @@ class Posterior(LossFunction):
     >>> logP = Posterior(likelihood=logL, prior=logL.jeffreys_prior)
     >>> mean_hat = logP.fit(x0=10.5)
     >>> mean_hat.x
-    array([ 9.2849762])
+    array([ 9.28500001])
     >>> print(np.mean(toy_data)) # MLE estimate
     9.29
     """
@@ -105,7 +105,7 @@ class GaussianPosterior(Posterior):
     >>> joint_prior = JointPrior(slope_prior, intercept_prior)
     >>> logP = GaussianPosterior(data=fake_data, mean=my_line, var=4, prior=joint_prior)
     >>> p0 = (slope_prior.mean, intercept_prior.mean) # initial guesses for slope and intercept
-    >>> p_hat = logP.fit(x0=p0)
+    >>> p_hat = logP.fit(x0=p0, method='Nelder-Mead')
     >>> p_hat.x # fitted parameters
     array([  2.9626486 ,  10.32858499])
     >>> #plt.plot(x, fake_data, 'o')
@@ -156,11 +156,11 @@ class PoissonPosterior(Posterior):
     >>> logP = PoissonPosterior(data=toy_data, mean=mean, prior=UniformPrior(lb=1, ub=20))
     >>> mean_hat = logP.fit(x0=10.5)
     >>> mean_hat.x # MAP is the same of MLE for uniform prior
-    array([ 9.28997498])
+    array([ 9.29000013])
     >>> logP = PoissonPosterior(data=toy_data, mean=mean, prior=GaussianPrior(mean=10, var=4))
     >>> mean_hat = logP.fit(x0=10.5)
     >>> mean_hat.x
-    array([ 9.30612488])
+    array([ 9.30614261])
     """
 
     def __init__(self, data, mean, prior):

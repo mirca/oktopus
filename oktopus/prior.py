@@ -3,7 +3,7 @@ import autograd.numpy as np
 from .loss import LossFunction
 
 
-__all__ = ['Prior', 'JointPrior', 'UniformPrior', 'GaussianPrior']
+__all__ = ['Prior', 'JointPrior', 'UniformPrior', 'GaussianPrior', 'LaplacianPrior']
 
 
 class Prior(LossFunction):
@@ -112,8 +112,8 @@ class UniformPrior(Prior):
     """
 
     def __init__(self, lb, ub, name=None):
-        self.lb = np.asarray([lb])
-        self.ub = np.asarray([ub])
+        self.lb = np.asarray([lb]).reshape(-1)
+        self.ub = np.asarray([ub]).reshape(-1)
         self.name = name
 
     @property
@@ -153,14 +153,14 @@ class GaussianPrior(Prior):
     Examples
     --------
     >>> from oktopus import GaussianPrior
-    >>> gauss = GaussianPrior(0, 1)
-    >>> gauss(2)
+    >>> prior = GaussianPrior(0, 1)
+    >>> prior(2)
     2.0
     """
 
     def __init__(self, mean, var, name=None):
-        self.mean = np.asarray([mean])
-        self.var = np.asarray([var])
+        self.mean = np.asarray([mean]).reshape(-1)
+        self.var = np.asarray([var]).reshape(-1)
         self.name = name
 
     @property
@@ -180,3 +180,42 @@ class GaussianPrior(Prior):
 
     def gradient(self, params):
         return ((params - self.mean) / self.var).sum()
+
+class LaplacianPrior(Prior):
+    """Computes the negative log pdf for a n-dimensional independent Laplacian
+    random variable.
+
+    Attributes
+    ----------
+    mean : scalar or array-like
+        Mean
+    var : scalar or array-like
+        Variance
+
+    Examples
+    --------
+    >>> from oktopus import LaplacianPrior
+    >>> prior = LaplacianPrior(0, 2)
+    >>> prior(1)
+    1.0
+    """
+
+    def __init__(self, mean, var, name=None):
+        self.mean = np.asarray([mean]).reshape(-1)
+        self.var = np.asarray([var]).reshape(-1)
+        self.name = name
+
+    @property
+    def mean(self):
+        return self._mean
+
+    @mean.setter
+    def mean(self, value):
+        self._mean = value
+
+    @property
+    def variance(self):
+        return self.var
+
+    def evaluate(self, params):
+        return (abs(params - self.mean) / np.sqrt(.5 * self.var)).sum()

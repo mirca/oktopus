@@ -5,7 +5,8 @@ from .loss import LossFunction
 
 
 __all__ = ['Likelihood', 'MultinomialLikelihood', 'PoissonLikelihood',
-           'GaussianLikelihood', 'MultivariateGaussianLikelihood']
+           'GaussianLikelihood', 'LaplacianLikelihood',
+           'MultivariateGaussianLikelihood']
 
 
 class Likelihood(LossFunction):
@@ -100,7 +101,7 @@ class MultinomialLikelihood(Likelihood):
     :math:`P(class_1) = 1 - P(class_2) = p`. Suppose we have a sample with
     :math:`n_1` counts from :math:`class_1` and :math:`n_2` counts from
     :math:`class_2`. Assuming the distribution of the number of counts is a
-    binomial distribution, the MLE for :math`P(class_1)` is given as
+    binomial distribution, the MLE for :math:`P(class_1)` is given as
     :math:`P(class_1) = \dfrac{n_1}{n_1 + n_2}`. The Fisher Information Matrix
     is given by :math:`F(n, p) = \dfrac{n}{p * (1 - p)}`. Let's see how we can
     estimate :math:`p`.
@@ -112,7 +113,7 @@ class MultinomialLikelihood(Likelihood):
     ...     return np.array([p, 1 - p])
     >>> logL = MultinomialLikelihood(data=counts, mean=ber_pmf)
     >>> p0 = 0.5 # our initial guess
-    >>> p_hat = logL.fit(x0=p0)
+    >>> p_hat = logL.fit(x0=p0, method='Nelder-Mead')
     >>> p_hat.x
     array([ 0.4])
     >>> p_hat_unc = logL.uncertainties(p_hat.x)
@@ -194,12 +195,12 @@ class PoissonLikelihood(Likelihood):
     >>> logL = PoissonLikelihood(data=toy_data, mean=mean)
     >>> mean_hat = logL.fit(x0=10.5)
     >>> mean_hat.x
-    array([ 9.28997498])
+    array([ 9.29000013])
     >>> print(np.mean(toy_data)) # theorectical MLE
     9.29
     >>> mean_unc = logL.uncertainties(mean_hat.x)
     >>> mean_unc
-    array([ 3.04794603])
+    array([ 3.04795015])
     >>> print(math.sqrt(np.mean(toy_data))) # theorectical Fisher information
     3.047950130825634
     """
@@ -256,7 +257,7 @@ class GaussianLikelihood(Likelihood):
     >>> my_line = lambda a, b: line(x, a, b)
     >>> logL = GaussianLikelihood(fake_data, my_line, 4)
     >>> p0 = (1, 1) # dumb initial_guess for alpha and beta
-    >>> p_hat = logL.fit(x0=p0)
+    >>> p_hat = logL.fit(x0=p0, method='Nelder-Mead')
     >>> p_hat.x # fitted parameters
     array([  2.96263393,  10.32860717])
     >>> p_hat_unc = logL.uncertainties(p_hat.x) # get uncertainties on fitted parameters
@@ -279,7 +280,7 @@ class GaussianLikelihood(Likelihood):
         self.var = var
 
     def evaluate(self, params):
-        return np.nansum((self.data - self.mean(*params)) ** 2 / (2 * self.var))
+        return 0.5 * np.nansum((self.data - self.mean(*params)) ** 2 / self.var)
 
     def gradient(self, params):
         n_params = len(params)
@@ -291,6 +292,35 @@ class GaussianLikelihood(Likelihood):
                                                    * grad / self.var)
                                        )
         return grad_likelihood
+
+
+class LaplacianLikelihood(Likelihood):
+    r"""
+    Implements the likelihood function for independent
+    (possibly non-identically) distributed Laplacian measurements
+    with known error bars.
+
+    .. math::
+
+         \arg \min_{\theta \in \Theta} \sum_k \dfrac{|y_k - \mu_k(\theta)|}{\sigma_k}
+
+    Attributes
+    ----------
+    data : ndarray
+        Observed data
+    mean : callable
+        Mean model
+    var : float or array-like
+        Uncertainties on the observed data
+    """
+
+    def __init__(self, data, mean, var):
+        self.data = data
+        self.mean = mean
+        self.var = var
+
+    def evaluate(self, params):
+        return np.nansum(np.abs(self.data - self.mean(*params)) / np.sqrt(.5 * self.var))
 
 
 class MultivariateGaussianLikelihood(Likelihood):
